@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <libusb-1.0/libusb.h>
 
@@ -78,6 +79,69 @@ int openDevice(void) {
 			return 2;
 		}
 
+		printf("\nEnter source (0 for primary, 1 for logo): \n");
+		printf("For primary: Color is set by user input (RGB values).\n");
+		printf("For logo: Color is changed dynamically, no input needed.\n");
+		while (1) {
+			fgets(input_string, sizeof(input_string), stdin);
+			source = strtol(input_string, NULL, 10);
+			if (source == 0 || source == 1) {
+				break;
+			} else {
+				printf("Invalid input. Please enter 0 for primary or 1 for logo.\n");
+			}
+		}
+
+		if (source == 0) {
+			// For primary, ask for RGB values
+			printf("\nEnter RGB values (decimal or hex format).\n");
+			printf("For decimal: Enter 'R,G,B' (e.g., 255,87,51)\n");
+			printf("For hex: Enter '#RRGGBB' (e.g., #FF5733)\n");
+
+			char input[20];
+			while (1) {
+				fgets(input, sizeof(input), stdin);
+				input[strcspn(input, "\n")] = '\0';  // Remove newline character
+
+				// Check if input starts with '#' for hex format
+				if (input[0] == '#') {
+					if (strlen(input) == 7) {
+						// Parse hex code
+						if (sscanf(input, "#%2x%2x%2x", &R, &G, &B) == 3) {
+							printf("Parsed Hex: R = %d, G = %d, B = %d\n", R, G, B);
+							break;
+						} else {
+							printf("Invalid hex code format. Please use #RRGGBB format.\n");
+						}
+					} else {
+						printf("Invalid hex code. Ensure it starts with '#' and has exactly 6 hex characters.\n");
+					}
+				} else {
+					// Otherwise, assume decimal format
+					// Parse the RGB values separated by commas
+					if (sscanf(input, "%d,%d,%d", &R, &G, &B) == 3) {
+						// Check if values are in range 0-255
+						if (R >= 0 && R <= 255 && G >= 0 && G <= 255 && B >= 0 && B <= 255) {
+							printf("Parsed Decimal: R = %d, G = %d, B = %d\n", R, G, B);
+							break;
+						} else {
+							printf("Invalid RGB values. Ensure each value is between 0 and 255.\n");
+						}
+					} else {
+						printf("Invalid format. Please enter three RGB values separated by commas (e.g., 255,87,51).\n");
+					}
+				}
+
+				// Clear the input buffer in case of invalid input
+				while (getchar() != '\n');
+			}
+		} else if (source == 1) {
+			// For logo, change color dynamically (no input)
+			R = 0;
+			G = 0;
+			B = 0;
+		}
+
 	const int needed_id = getNthId(available_head, choice);
 	const char* temp_name = getName(available_head, needed_id);
 
@@ -118,13 +182,7 @@ int openDevice(void) {
 		devByte[1] = 0xff;
 	}
 
-	uint32_t random = (uint32_t)rand();
-
 	type = 0x01; // static
-	source = random & 0x01; // 0 - primary, 1 - logo
-	R = random & 0xff;
-	G = (random >> 8) & 0xff;
-	B = (random >> 16) & 0xff;
 
 	unsigned char data[20] = {devByte[0], devByte[1], devByte[2], devByte[3], source, type, R, G, B, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -308,13 +366,12 @@ int main(void) {
 	}
 
 	if (returnCode >= 0) {
-		printf("Now, the color of your ");
 		switch (source) {
 			case 0:
-				printf("primary ");
+				printf("Now, the color of your primary is #%02x%02x%02x\n",R,G,B);
 				break;
 			case 1:
-				printf("logo ");
+				printf("Now, the color is set to logo\n");
 				break;
 			default:
 				printf("undefined!\n");
@@ -322,7 +379,6 @@ int main(void) {
 				deleteLinkedList(&available_head);
 				exit(EXIT_FAILURE);
 		}
-		printf("is #%02x%02x%02x\n",R,G,B);
 	}
 
 	deleteLinkedList(&head);

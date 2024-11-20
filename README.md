@@ -84,12 +84,12 @@ The program is not complete yet.
 It also requires root privileges.
 
 ### Completed features
+- Set the colour for logo or primary
 - Set the static LED colour for the primary or logo
+- Set custom LED colours
 
 ### Missing features
-- Set custom LED colours
 - Set the cycle or breathing
-- Set the colour for logo or primary
 - Set DPI
 - Set report rate
 - Battery level report
